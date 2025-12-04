@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/melody-craft/static/css/main.8e59b55f.css",
+    "main.js": "/melody-craft/static/js/main.664962ac.js",
+    "static/js/453.44854bec.chunk.js": "/melody-craft/static/js/453.44854bec.chunk.js",
+    "index.html": "/melody-craft/index.html",
+    "main.8e59b55f.css.map": "/melody-craft/static/css/main.8e59b55f.css.map",
+    "main.664962ac.js.map": "/melody-craft/static/js/main.664962ac.js.map",
+    "453.44854bec.chunk.js.map": "/melody-craft/static/js/453.44854bec.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8e59b55f.css",
+    "static/js/main.664962ac.js"
+  ]
+}
