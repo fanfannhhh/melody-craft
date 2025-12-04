@@ -1,7 +1,112 @@
-import React from 'react';
-import { MusicPlayerProps } from '../types';
+import React, { useEffect, useState } from 'react';
+import * as Tone from 'tone';
+import { MusicPlayerProps, MusicStyle } from '../types';
+
+const buildPattern = (style: MusicStyle, description: string) => {
+  const isCalm = /sad|slow|soft|ambient|lofi|chill|relax/i.test(description);
+
+  switch (style) {
+    case 'Jazz':
+      return {
+        notes: ['C4', 'E4', 'G4', 'B4', 'D5', 'B4', 'G4', 'E4'],
+        subdivision: '8n',
+        tempo: isCalm ? 80 : 100,
+      };
+    case 'Classical':
+      return {
+        notes: ['G4', 'A4', 'B4', 'C5', 'B4', 'A4', 'G4', 'D4'],
+        subdivision: '8n',
+        tempo: isCalm ? 70 : 90,
+      };
+    case 'Electronic':
+      return {
+        notes: ['A3', 'A3', 'C4', 'E4', 'A4', 'E4', 'C4', 'A3'],
+        subdivision: '16n',
+        tempo: isCalm ? 100 : 125,
+      };
+    case 'Pop':
+      return {
+        notes: ['C4', 'E4', 'G4', 'G4', 'A4', 'G4', 'E4', 'D4'],
+        subdivision: '8n',
+        tempo: isCalm ? 90 : 110,
+      };
+    case 'Rock':
+      return {
+        notes: ['E3', 'G3', 'A3', 'B3', 'D4', 'B3', 'A3', 'G3'],
+        subdivision: '8n',
+        tempo: isCalm ? 100 : 130,
+      };
+    default:
+      return {
+        notes: ['C4', 'E4', 'G4', 'C5', 'G4', 'E4', 'D4', 'C4'],
+        subdivision: '8n',
+        tempo: 100,
+      };
+  }
+};
 
 const MusicPlayer: React.FC<MusicPlayerProps> = ({ music }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [sequence, setSequence] = useState<Tone.Sequence<any> | null>(null);
+  const [synth, setSynth] = useState<Tone.PolySynth | null>(null);
+
+  // 每当 music 变化时，重建 Tone 合成器与音序器
+  useEffect(() => {
+    let localSynth: Tone.PolySynth | null = null;
+    let localSeq: Tone.Sequence<any> | null = null;
+
+    // 停止之前的播放
+    Tone.Transport.stop();
+    setIsPlaying(false);
+
+    if (music) {
+      const { notes, subdivision, tempo } = buildPattern(music.style, music.description);
+      Tone.Transport.bpm.value = tempo;
+
+      localSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+
+      localSeq = new Tone.Sequence(
+        (time, note: string | null) => {
+          if (note && localSynth) {
+            localSynth.triggerAttackRelease(note, subdivision, time);
+          }
+        },
+        notes,
+        subdivision,
+      );
+    }
+
+    setSynth(localSynth);
+    setSequence(localSeq);
+
+    return () => {
+      if (localSeq) {
+        localSeq.stop();
+        localSeq.dispose();
+      }
+      if (localSynth) {
+        localSynth.dispose();
+      }
+    };
+  }, [music]);
+
+  const handleTogglePlay = async () => {
+    if (!sequence || !synth || !music) return;
+
+    if (Tone.context.state !== 'running') {
+      await Tone.start();
+    }
+
+    if (isPlaying) {
+      Tone.Transport.stop();
+      setIsPlaying(false);
+    } else {
+      sequence.start(0);
+      Tone.Transport.start();
+      setIsPlaying(true);
+    }
+  };
+
   if (!music) {
     return (
       <div className="text-center py-12">
@@ -64,7 +169,14 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ music }) => {
               <p className="text-sm text-gray-400">ID: {music.id}</p>
             </div>
           </div>
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition">模拟播放</button>
+          <button
+            type="button"
+            onClick={handleTogglePlay}
+            disabled={!sequence || !synth}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg font-medium transition"
+          >
+            {isPlaying ? '暂停播放' : sequence && synth ? '播放生成旋律' : '无法播放'}
+          </button>
         </div>
 
         {/* 模拟播放器 */}

@@ -12,6 +12,8 @@ export interface GeneratedMusic {
   timestamp: string;
   status: 'generated' | 'pending' | 'failed';
   mockData?: Record<string, unknown>;
+  // 可选的本地生成音频URL（由MIDI转换而来）
+  audioUrl?: string;
 }
 
 export interface MusicFormProps {

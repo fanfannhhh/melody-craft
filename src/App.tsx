@@ -3,6 +3,7 @@ import './App.css';
 import MusicForm from './components/MusicForm';
 import MusicPlayer from './components/MusicPlayer';
 import { MusicRequest, GeneratedMusic } from './types';
+import { generateMusic } from './services/api';
 
 function App() {
   const [generatedMusic, setGeneratedMusic] = useState<GeneratedMusic | null>(null);
@@ -13,44 +14,11 @@ function App() {
     setIsLoading(true);
 
     try {
-      // 调用n8n webhook
-      const response = await fetch('http://localhost:5678/webhook-test/generate-music', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-
-      const data = await response.json();
-
-      const newMusic: GeneratedMusic = {
-        id: data.id || Date.now(),
-        style: request.style,
-        description: request.description,
-        timestamp: new Date().toISOString(),
-        status: 'generated',
-        mockData: data,
-      };
-
+      const newMusic = await generateMusic(request);
       setGeneratedMusic(newMusic);
       setHistory((prev) => [newMusic, ...prev.slice(0, 2)]);
     } catch (error) {
       console.error('生成失败:', error);
-      // 降级方案：使用模拟数据
-      const mockMusic: GeneratedMusic = {
-        id: Date.now(),
-        style: request.style,
-        description: request.description,
-        timestamp: new Date().toISOString(),
-        status: 'generated',
-        mockData: {
-          music_style: request.style,
-          description: request.description,
-          id: 101,
-          status: 'generated',
-        },
-      };
-      setGeneratedMusic(mockMusic);
-      setHistory((prev) => [mockMusic, ...prev.slice(0, 2)]);
     } finally {
       setIsLoading(false);
     }
